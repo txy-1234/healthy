@@ -1,0 +1,293 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生活方式小调查</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ff6347;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 3em;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .category-box {
+            width: 45%;
+            min-height: 400px; /* 最小高度，当内容增多时会自动扩大 */
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            background-color: #fff;
+        }
+
+        .healthy-box {
+            background-color: #ffe4e1; /* 浅红色 */
+            border: 5px solid #ff6347;
+        }
+
+        .unhealthy-box {
+            background-color: #e0ffff; /* 淡蓝色 */
+            border: 5px solid #4682b4;
+        }
+
+        .reset-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            color: white;
+            transition: transform 0.2s;
+            z-index: 2;
+        }
+
+        .healthy-box .reset-btn {
+            background-color: #ff6347;
+        }
+
+        .unhealthy-box .reset-btn {
+            background-color: #4682b4;
+        }
+        
+        .reset-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .reset-btn:active {
+            transform: scale(0.95);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .lifestyle-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 20px; /* 为重做按钮留出一些空间 */
+        }
+
+        .lifestyle-item {
+            background-color: #fff;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, background-color 0.2s;
+            position: relative;
+            user-select: none;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .lifestyle-item:hover {
+            transform: translateY(-5px);
+            background-color: #f0f0f0;
+        }
+
+        .lifestyle-item.active {
+            border-color: #ff6347;
+        }
+        
+        .option-buttons {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 30px; /* 调整这里的值以改变按钮间距 */
+            z-index: 10;
+        }
+        
+        .lifestyle-item.open .option-buttons {
+            display: flex;
+        }
+
+        .option-button {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            opacity: 0.7;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .option-button:hover {
+            opacity: 1.0;
+            transform: scale(1.1);
+        }
+
+        .btn-healthy {
+            background-color: #ff6347; /* 浅红色 */
+        }
+
+        .btn-unhealthy {
+            background-color: #4682b4; /* 淡蓝色 */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>生活方式小调查</h1>
+
+    <div class="container">
+        <div class="category-box healthy-box" id="healthy-box">
+            <button class="reset-btn">重做</button>
+            <div class="lifestyle-list" id="healthy-list"></div>
+        </div>
+        <div class="category-box unhealthy-box" id="unhealthy-box">
+            <button class="reset-btn">重做</button>
+            <div class="lifestyle-list" id="unhealthy-list"></div>
+        </div>
+    </div>
+
+    <div class="items-grid" id="items-grid"></div>
+
+    <script>
+        const lifestyles = [
+            "想几点睡就几点睡", "经常吃甜食", "经常吃外卖", "经常玩手机", "早睡早起",
+            "挑食", "不吃早餐", "不洗手就吃饭", "每天运动1小时", "每天运动不足1小时",
+            "10小时充足睡眠", "睡眠不足10小时", "经常喝饮料", "不爱喝水", "吃完饭就躺着",
+            "心事憋在心里", "过度焦虑", "遇事爱生气", "情绪稳定", "经常跷二郎腿",
+            "按时吃饭", "荤素搭配", "经常和朋友分享", "经常吃宵夜", "睡前不刷牙",
+            "边吃饭边喝饮料", "经常熬夜", "对着空调吹风", "边吃饭边聊天", "经常吃零食",
+            "吃饭细嚼慢咽", "暴饮暴食","边吃饭边看电视"
+        ];
+
+        const itemsGrid = document.getElementById('items-grid');
+        const healthyList = document.getElementById('healthy-list');
+        const unhealthyList = document.getElementById('unhealthy-list');
+
+        // 生成生活方式小文本框
+        lifestyles.forEach(text => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'lifestyle-item';
+            itemDiv.textContent = text;
+            
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'option-buttons';
+            
+            const healthyBtn = document.createElement('button');
+            healthyBtn.className = 'option-button btn-healthy';
+            healthyBtn.onclick = (e) => {
+                e.stopPropagation();
+                addTextToBox(itemDiv, healthyList);
+                hideButtons(itemDiv);
+            };
+
+            const unhealthyBtn = document.createElement('button');
+            unhealthyBtn.className = 'option-button btn-unhealthy';
+            unhealthyBtn.onclick = (e) => {
+                e.stopPropagation();
+                addTextToBox(itemDiv, unhealthyList);
+                hideButtons(itemDiv);
+            };
+
+            buttonsDiv.appendChild(healthyBtn);
+            buttonsDiv.appendChild(unhealthyBtn);
+            itemDiv.appendChild(buttonsDiv);
+            
+            itemDiv.addEventListener('click', () => {
+                // 切换按钮的显示状态
+                if (itemDiv.classList.contains('open')) {
+                    hideButtons(itemDiv);
+                } else {
+                    hideAllButtons();
+                    showButtons(itemDiv);
+                }
+            });
+
+            itemsGrid.appendChild(itemDiv);
+        });
+
+        // 将文本添加到大方框中
+        function addTextToBox(item, list) {
+            const text = item.textContent;
+            const existingItems = list.querySelectorAll('.lifestyle-item');
+            let found = false;
+            existingItems.forEach(existingItem => {
+                if (existingItem.textContent === text) {
+                    found = true;
+                }
+            });
+
+            if (!found) {
+                const itemClone = item.cloneNode(true);
+                itemClone.classList.remove('open');
+                itemClone.classList.remove('active');
+                itemClone.style.pointerEvents = 'none'; // 克隆的文本框不可点击
+                itemClone.querySelector('.option-buttons').remove(); // 移除按钮
+
+                list.appendChild(itemClone);
+            }
+        }
+
+        // 显示按钮
+        function showButtons(itemDiv) {
+            itemDiv.classList.add('open');
+            itemDiv.classList.add('active');
+        }
+
+        // 隐藏按钮
+        function hideButtons(itemDiv) {
+            itemDiv.classList.remove('open');
+            itemDiv.classList.remove('active');
+        }
+        
+        // 隐藏所有按钮
+        function hideAllButtons() {
+            document.querySelectorAll('.lifestyle-item.open').forEach(item => {
+                hideButtons(item);
+            });
+        }
+
+        // 重做按钮功能
+        document.querySelectorAll('.reset-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const parentBox = button.closest('.category-box');
+                const list = parentBox.querySelector('.lifestyle-list');
+                list.innerHTML = '';
+            });
+        });
+
+        // 点击页面其他地方隐藏所有按钮
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.lifestyle-item')) {
+                hideAllButtons();
+            }
+        });
+
+    </script>
+</body>
+</html>
+
+
